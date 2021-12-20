@@ -12,9 +12,9 @@ conda activate qiime2-2021.4
 
 ## 1. Import the data into Qiime2
 
-It's saved on my solid state hardrive, Data_SS1. There are two whole plates, plates 1 and 2, and then some samples on Fecal_Plate_15, which I have saved into an extra 
+It's saved on my solid state hardrive, Data_SS1. There are two whole plates, plates 1 and 2, and then some samples on Fecal_Plate_15. 
 
-There are hidden files in the folder, which I found using ```ls -alh```. Then I removed them using ```rm ._ATP*```. If you don't remove them then the commands won't run. 
+There were hidden files in the folders, which I found using ```ls -alh```. Then I removed them using ```rm ._ATP*```. If you don't remove them then the commands won't run. 
 
 ```
 qiime tools import\
@@ -58,15 +58,16 @@ View ```.qzv``` files at [view.qiime2.org](view.qiime2.org). There is a dip in q
 
 ## 2. Trim primers using cutadapt
 
-The MiFish sequences are:
-F primer: GTCGGTAAAACTCGTGCCAGC (21 bp)
-R primer: CATAGTGGGGTATCTAATCCCAGTTTG (27 bp)
+The MiFish sequences are:   
+
+F primer: GTCGGTAAAACTCGTGCCAGC (21 bp)   
+R primer: CATAGTGGGGTATCTAATCCCAGTTTG (27 bp)   
 
 ### Trim 3' ends first
-At the 3' end of the read, the primer will have been read through after reading the MiFish region. I need to be looking for the reverse complement of the reverse primer in read 1 (—p-adapter-f) and the reverse complement of the forward primer in R2 (—p-adapter-r)
+At the 3' end of the read, the primer will have been read through after reading the MiFish region. I need to be looking for the reverse complement of the reverse primer in read 1 (—p-adapter-f) and the reverse complement of the forward primer in R2 (—p-adapter-r).
 
-F primer reverse complement: GCTGGCACGAGTTTTACCGAC
-R primer reverse complement: CAAACTGGGATTAGATACCCCACTATG
+F primer reverse complement: GCTGGCACGAGTTTTACCGAC   
+R primer reverse complement: CAAACTGGGATTAGATACCCCACTATG    
 
 ```
 for K in {1..2}; do

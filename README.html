@@ -360,8 +360,8 @@ pre code {
 conda activate qiime2-2021.4</code></pre>
 <div id="import-the-data-into-qiime2" class="section level2">
 <h2>1. Import the data into Qiime2</h2>
-<p>It’s saved on my solid state hardrive, Data_SS1. There are two whole plates, plates 1 and 2, and then some samples on Fecal_Plate_15, which I have saved into an extra</p>
-<p>There are hidden files in the folder, which I found using <code>ls -alh</code>. Then I removed them using <code>rm ._ATP*</code>. If you don’t remove them then the commands won’t run.</p>
+<p>It’s saved on my solid state hardrive, Data_SS1. There are two whole plates, plates 1 and 2, and then some samples on Fecal_Plate_15.</p>
+<p>There were hidden files in the folders, which I found using <code>ls -alh</code>. Then I removed them using <code>rm ._ATP*</code>. If you don’t remove them then the commands won’t run.</p>
 <pre><code>qiime tools import\
   --type 'SampleData[PairedEndSequencesWithQuality]'\
   --input-path /Volumes/Data_SS1/MiFish/ATPU_WillK2021_Plate1/211203_A01346_0039_BHTJ7TDRXY_16Mer120321_GC_ATPU1/reads/ \
@@ -397,11 +397,14 @@ qiime demux summarize \
 </div>
 <div id="trim-primers-using-cutadapt" class="section level2">
 <h2>2. Trim primers using cutadapt</h2>
-<p>The MiFish sequences are: F primer: GTCGGTAAAACTCGTGCCAGC (21 bp) R primer: CATAGTGGGGTATCTAATCCCAGTTTG (27 bp)</p>
+<p>The MiFish sequences are:</p>
+<p>F primer: GTCGGTAAAACTCGTGCCAGC (21 bp)<br />
+R primer: CATAGTGGGGTATCTAATCCCAGTTTG (27 bp)</p>
 <div id="trim-3-ends-first" class="section level3">
 <h3>Trim 3’ ends first</h3>
-<p>At the 3’ end of the read, the primer will have been read through after reading the MiFish region. I need to be looking for the reverse complement of the reverse primer in read 1 (—p-adapter-f) and the reverse complement of the forward primer in R2 (—p-adapter-r)</p>
-<p>F primer reverse complement: GCTGGCACGAGTTTTACCGAC R primer reverse complement: CAAACTGGGATTAGATACCCCACTATG</p>
+<p>At the 3’ end of the read, the primer will have been read through after reading the MiFish region. I need to be looking for the reverse complement of the reverse primer in read 1 (—p-adapter-f) and the reverse complement of the forward primer in R2 (—p-adapter-r).</p>
+<p>F primer reverse complement: GCTGGCACGAGTTTTACCGAC<br />
+R primer reverse complement: CAAACTGGGATTAGATACCCCACTATG</p>
 <pre><code>for K in {1..2}; do
   qiime cutadapt trim-paired \
     --i-demultiplexed-sequences demux_Plate$K.qza \
