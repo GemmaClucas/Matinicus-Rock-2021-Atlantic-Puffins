@@ -63,7 +63,7 @@ qiime demux summarize \
 
 View ```.qzv``` files at [view.qiime2.org](view.qiime2.org). There is a dip in quality around 80-100bp. This could be due to primer dimers. Most samples have tens of thousands to hundreds of thousands of reads, which is more than enough.
 
-![Quality scores for reads from plate 1.](MiFish/demux_plate1_qual.png) 
+![Quality scores for reads from plate 1.](demux_plate1_qual.png) 
 
 
 ## 2. Trim primers using cutadapt
@@ -200,7 +200,7 @@ qiime metadata tabulate\
 Very variable numbers of reads get through the denoising/merging/chimera filtering. Not the best stats but hopefully it's fine.
 E.g:
 
-![Denoising stats for some of the samples on the extra plate.](MiFish/denoising.png)
+![Denoising stats for some of the samples on the extra plate.](denoising.png)
 
 
 To view the rep-seqs (only running this for one plate, will view all after merging plates)
@@ -425,7 +425,7 @@ qiime diversity alpha-rarefaction \
 ```
 Shannon diversity is still flat for the samples. The observed OTUs has quite a lot of variability at 400 but has plateued by 600. This suggests that 600 is the minimum depth of sequencing we should use.
 
-![Alpha rarefaction curve for a depth of 100 to 2500 reads.](MiFish/alpha-rarefaction-100-2500.png)
+![Alpha rarefaction curve for a depth of 100 to 2500 reads.](alpha-rarefaction-100-2500.png)
 
 ## 10. Rarefy to a deph of 600 and redo barplots
 
@@ -445,7 +445,7 @@ qiime taxa barplot \
   --o-visualization barplot_oBirdsMammalsUnassigned_rarefied600.qzv
 ```
 This is what the barplots look like after rarefying:
-![alt txt](MiFish/barplot_rarefied600.png)
+![alt txt](barplot_rarefied600.png)
 
 And I have downloaded and saved this rarefied feature table to ```featuretable_rarefied600.csv```. This is the dataset to use going forward or your own version if you are doing this all yourself. Note that mine and yours will differ slightly, as the rarefaction will not pick the exact same sequences everytime it is repeated.
 
