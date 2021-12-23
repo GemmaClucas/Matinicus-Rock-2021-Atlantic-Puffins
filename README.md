@@ -4,17 +4,23 @@ Started 15th Dec 2021
 
 Fecal metabarcoding analysis for samples collected on Matinicus Rock by Will Kennerley, 2021.
 
-Load qiime environment and cd to correct directory.
+The [qiime documentation](https://docs.qiime2.org/2021.11/) is a fantastic resource and before you begin going through this, I would spend some time working through their help guides and tutorials. You can learn a lot from them and might find some better ways of doing things than I've got here, so feel free to modify this workflow as needed.
+
+
+
+## 1. Import the data into Qiime2
+
+First, load qiime environment and cd to correct directory in the terminal. Modify this command based on where your working directory will be.
 ```
 cd /Users/gemmaclucas/GitHub/Fecal_metabarcoding/Matinicus-Rock-2021-Atlantic-Puffins
 conda activate qiime2-2021.4
 ```
 
-## 1. Import the data into Qiime2
+The raw reads are saved on my solid state hardrive, Data_SS1. There are two whole plates, plates 1 and 2, and then some samples on Fecal_Plate_15. I moved these extra files into their own directory.
 
-It's saved on my solid state hardrive, Data_SS1. There are two whole plates, plates 1 and 2, and then some samples on Fecal_Plate_15. 
+Will: You don't acually need the raw reads, since I am sharing the ```demux``` artefacts which are just the raw reads turned into a qiime artefact. So you can skip this step and start at the next one.
 
-There were hidden files in the folders, which I found using ```ls -alh```. Then I removed them using ```rm ._ATP*```. If you don't remove them then the commands won't run. 
+Note, there were hidden files in the folders, which I found using ```ls -alh```. I removed them using ```rm ._*```. These were preventing to commands from running initially.
 
 ```
 qiime tools import\
@@ -36,7 +42,9 @@ qiime tools import\
   --output-path MiFish/demux_extras.qza  
 
 ```  
-Move to the diectory where all the next steps will be. Summarise read quality and number of reads for each plate.
+Move to the diectory where all the next steps will take place. Summarise read quality and number of reads for each plate. 
+
+Note that the ```for K in {1..2}; do ... done``` notation is just the bash scripting way of writing a for loop to cycle through the two plates.
 
 ```
 cd MiFish/
@@ -53,7 +61,9 @@ qiime demux summarize \
 
 ```
 
-View ```.qzv``` files at [view.qiime2.org](view.qiime2.org). There is a dip in quality around 80-90bp. This could be due to primer dimers. Most samples have tens of thousands to hundreds of thousands of reads, which is more than enough.
+View ```.qzv``` files at [view.qiime2.org](view.qiime2.org). There is a dip in quality around 80-100bp. This could be due to primer dimers. Most samples have tens of thousands to hundreds of thousands of reads, which is more than enough.
+
+![Quality scores for reads from plate 1.](MiFish/demux_plate1_qual.png) 
 
 
 ## 2. Trim primers using cutadapt
@@ -93,7 +103,7 @@ grep "Total written (filtered):" cutadapt_out_Plate1.txt
 grep "Total written (filtered):" cutadapt_out_Plate2.txt
 grep "Total written (filtered):" cutadapt_out_extras.txt
 ```
-Very variable amounts of data passed the filters, which is a shame.
+Very variable amounts of data passed the filters. Not sure why. Maybe lots of primer dimer is getting filtered out here.
 
 Make new visualisations to see how many sequences are left and their quality scores.
 ```
@@ -132,7 +142,6 @@ qiime cutadapt trim-paired \
   --o-trimmed-sequences trimd2_extras.qza \
   --verbose > cutadapt_out2_extras.txt
 ```  
-About 90% of the data seems to pass this filter for both puffins and terns.
 
 Not going to make the qzv files for now.
 
@@ -145,9 +154,9 @@ grep "Total written (filtered):" cutadapt_out2_extras.txt
 About 90% passed the filter here for all samples. That's pretty normal.
 
 ## 3. Denoise with dada2
-I am going to use the same settings that I used for the 2017 and 2018 tern fecal samples here, except I need to add the --p-min-overlap parameter, otherwise I seem to be getting a load of rubbish reads which are 250bp long and start with long strings of Cs. This is only available in qiime2-2021.4 and later. I initally tried specifying an overlap of 30, but that didn't seem like enough as I was still getting junk sequences, but I think 50 is working well now.
+I am going to use the same settings that I found worked best for the 2017-2019 tern fecal samples, except I am adding the --p-min-overlap parameter. If I don't use this, I seem to be getting a load of rubbish reads which are 250bp long and start with long strings of Cs. This option is only available in qiime2-2021.4 and later. I didn't get these rubbish reads before, so I'm not sure what has changed, but the overlap filter seems to fix it. 
 
-Note, this step is pretty slow to run, a whole plate takes about 40 mins (but that changes depending on sequencing depth).
+Note, this step can be a little slow to run.
 ```
 for K in {1..2}; do
   qiime dada2 denoise-paired \
@@ -189,6 +198,10 @@ qiime metadata tabulate\
   --o-visualization denoise_extras.qzv
 ```
 Very variable numbers of reads get through the denoising/merging/chimera filtering. Not the best stats but hopefully it's fine.
+E.g:
+
+![Denoising stats for some of the samples on the extra plate.](MiFish/denoising.png)
+
 
 To view the rep-seqs (only running this for one plate, will view all after merging plates)
 ```
@@ -232,7 +245,9 @@ qiime feature-table tabulate-seqs \
 
 ## 5. Create a database for taxonomy assignment
 
-The rescript module can download sequences from GenBank (NCBI) given an entrez search term. In this search, I'm searching for anything  with "12S", "12s", "small subunit ribosomal RNA gene", or whole mitochondrial genomes in the title. Then the rest of the terms should capture fish. However, I also want to include seabirds in the database, so that any sequences from the puffins get assigned, so I've added some terms for the birds I work with (so that I don't have to recreate this anew every time). 
+Will: this step was more involved than I was hoping. If you can follow-along with the commands, great. If not, just use the database I created which is called ```ncbi-refseqs-withHuman```.
+
+The rescript module can download sequences from GenBank (NCBI) given an entrez search term. In this search, I'm searching for anything  with "12S", "12s", "small subunit ribosomal RNA gene", or whole mitochondrial genomes in the title. Then the rest of the terms should capture fish. However, I also want to include seabirds in the database, so that any sequences from the birds get assigned correctly, so I've added some terms for the birds I work with (so that I don't have to recreate this anew every time). 
 I'm then filtering to just mitochondrial DNA in case any nuclear sequences get captured. 
 
 ```
@@ -280,15 +295,11 @@ qiime rescript dereplicate \
 
 I think this step also takes care of cleaning up the taxonomy file, so if any sequences were culled in the above step, then they should be removed.
 
-In the summer I was playing around with training a feature classifier on a similar database to assign taxonomy, but it did really badly. Butterfish were consistently assigned to the wrong species, as were haddock I think. So I will use the script I have to blast all the rep-seqs against the reference database.
+In the summer I was playing around with training a feature classifier on a similar database to assign taxonomy, but it did really badly. Butterfish were consistently assigned to the wrong species, as were haddock. So I will keep using the script below (```mktaxa.py```) to iteratively blast all the rep-seqs against the reference database.
 
-Note the blast method only works with an older version of Qiime, so I have to load that first. 
 
 ## 6. Assign taxonomy
-
-In the summer I was playing around with training a feature classifier on a similar database to assign taxonomy, but it did really badly. Butterfish were consistently assigned to the wrong species, as were haddock I think. So I will use the script I have to blast all the rep-seqs against the reference database.
-
-Note the blast method only works with an older version of Qiime, so I have to load that first. 
+Note, the blast method only works with an older version of Qiime, so I have to load that first. 
 ```
 conda activate qiime2-2019.4
 
@@ -298,9 +309,11 @@ This creates a file called ```superblast_taxonomy.qza```, which relates the rep-
 ```
 qiime metadata tabulate \
   --m-input-file superblast_taxonomy.qza \
-  --o-visualization ncbi-refseqs-superblast_taxonomy
+  --o-visualization superblast_taxonomy
 ```
 This file can be used to look up the assignments made to individual features, and to search for species e.g. looking up "Aves" shows that nearly all sequences assigned to Aves were classified as puffins. 
+
+![Example of looking up "Aves" in the taxonomy file](MiFish/superblast_taxonomy_screenshot.png)
 
 ### Add a human sequence to the database manually
 I made an error and forgot to add humans to the database. I don't want to add them to my search term, as it will download thousands of human sequences, so I just found one complete mitochondrial genome on GenBank. I put this into a text document ```temp.txt``` and deleted the carriage returns at the end of each line using ```tr -d '\n' < temp.txt > output.txt ```. 
@@ -316,7 +329,7 @@ qiime tools export \
   --output-path editing_database
   
 ```
-I added the sequence and corresponding taxonomy string to each file. Then I imported them back into Qiime:
+I added the sequence and corresponding taxonomy string to each file by hand. Then I imported them back into Qiime:
 ```
 qiime tools import \
   --input-path editing_database/taxonomy.tsv \
@@ -328,6 +341,7 @@ qiime tools import \
   --output-path editing_database/ncbi-refseqs-withHuman \
   --type 'FeatureData[Sequence]'  
 ```
+
 ### Re-assign taxonomy using edited database
 Note, I am just overwriting the old file here since I don't want to have two versions hanging around.
 ```
@@ -339,12 +353,16 @@ Remake the version that can be viewed online:
 ```
 qiime metadata tabulate \
   --m-input-file superblast_taxonomy.qza \
-  --o-visualization ncbi-refseqs-superblast_taxonomy
+  --o-visualization superblast_taxonomy
 ```
-Searching this shows five features that were classified as human, although three of them have <95% identity, so are likely some other mammal. 
+Searching this shows five features that were classified as human, although three of them have <95% identity, so are likely some other mammalian sequence or something.
+
+To find out exactly what they are, copy the feature ID and search for it in the ```merged_rep-seqs.qzv``` file (CTR +F). If you click on the sequence, it will automatically set-up a blast search for them in genbank. Click "View Report" to run the search (it will take a minute).
+
+I looked at one of them and it showed it was a nuclear copy of the mitochondrial gene. Mitochondrial genes sometimes have copies in the nuclear genome that get mutated over time, so that explains why it's not a great match to the mitochondrial sequence we have in the database.
 
 ## 7. Remove non-food reads
-Filter out any sequences from the bird, mammals (human), and unnassigned sequences before rarefying. 
+Filter out any sequences from the bird, mammals (human), and unnassigned sequences since we're not interested in these.
 
 ```
 qiime taxa filter-table \
@@ -368,7 +386,7 @@ qiime taxa barplot \
   --m-metadata-file metadata.txt \
   --o-visualization barplot_before_filtering.qzv
 ```
-19 samples had 100% avian DNA, which is annoying since we can't recover any fish DNA from them. I haven't seen this in terns. Perhaps the primers are a better match to puffins. Or perhaps the birds hadn't fed on anything recently?
+19 samples had 100% avian DNA, which is annoying since we can't recover any fish DNA from them. I haven't seen this in terns before. Perhaps the primers are a better match to puffins? Or perhaps the birds hadn't fed on anything recently? Not sure.
 
 Barplot having removed bird/human/unassigned DNA:
 ```
@@ -380,7 +398,8 @@ qiime taxa barplot \
 ```
 
 ## 9. Calculate alpha rarefaction curves 
-First you have to collapse the taxonomy, so that you are rarefying based on species assignments and not ASVs. I am going to rarefy from a depth of 100 to 20,000 reads.
+
+To find out what depth of sequencing we need to recover all of the diversity in our samples, we can create rarefaction curves. But first, you have to collapse the taxonomy, so that you are rarefying based on species assignments and not ASVs (which we are not interested in, but microbial people are). I am going to rarefy from a depth of 100 to 20,000 reads to begin with.
 ```
 qiime taxa collapse \
   --i-table merged_table_noBirdsMammalsUnassigned.qza \
@@ -395,7 +414,7 @@ qiime diversity alpha-rarefaction \
   --p-max-depth 20000 \
   --o-visualization alpha-rarefaction-100-20000
 ```
-Select sample metadata column: SampleType to separate the samples out from the blanks and mock community. The Shannon diversity is flat for the samples (ignore the mock community, this is artifically diverse compared to the samples). The curve for the observed OTUs (species) increases from 100 to 2000, so repeat the rarefaction for this range to find out what the actiual minimum depth is without sacrificing the diversity of the samples.
+When viewing the qzv file, select the sample metadata column "SampleType" to separate the samples out from the blanks and mock community. The Shannon diversity is flat for the samples (ignore the mock community, this is artifically diverse compared to the samples). The curve for the observed OTUs (species) increases from 100 to 2000, but we don't know whether it might flatten before 2000, so repeat the rarefaction for this range to find out what the actual minimum depth is without sacrificing the diversity of the samples.
 ```
 qiime diversity alpha-rarefaction \
   --i-table merged_table_noBirdsMammalsUnassigned_collapsed.qza \
@@ -404,4 +423,46 @@ qiime diversity alpha-rarefaction \
   --p-max-depth 2500 \
   --o-visualization alpha-rarefaction-100-2500
 ```
-Shannon diversity is still flat for the samples. The observed OTUs has quite a lot of variability at 400 but has plateued by 600. 
+Shannon diversity is still flat for the samples. The observed OTUs has quite a lot of variability at 400 but has plateued by 600. This suggests that 600 is the minimum depth of sequencing we should use.
+
+![Alpha rarefaction curve for a depth of 100 to 2500 reads.](MiFish/alpha-rarefaction-100-2500.png)
+
+## 10. Rarefy to a deph of 600 and redo barplots
+
+Rarefying all samples to a depth of 600 will account for the fact that some samples were seuquenced deeply and some much less so. Any samples with fewer than 600 reads will be droppped. 
+
+Note, this is done on the un-collapsed table.
+```
+qiime feature-table rarefy \
+  --i-table merged_table_noBirdsMammalsUnassigned.qza \
+  --p-sampling-depth 600 \
+  --o-rarefied-table merged_table_noBirdsMammalsUnassigned_rarefied600
+  
+qiime taxa barplot \
+  --i-table merged_table_noBirdsMammalsUnassigned_rarefied600.qza \
+  --i-taxonomy superblast_taxonomy.qza \
+  --m-metadata-file metadata.txt \
+  --o-visualization barplot_oBirdsMammalsUnassigned_rarefied600.qzv
+```
+This is what the barplots look like after rarefying:
+![alt txt](MiFish/barplot_rarefied600.png)
+
+And I have downloaded and saved this rarefied feature table to ```featuretable_rarefied600.csv```. This is the dataset to use going forward or your own version if you are doing this all yourself. Note that mine and yours will differ slightly, as the rarefaction will not pick the exact same sequences everytime it is repeated.
+
+### 11. Next steps
+
+This is all that I had time for, so, I'm afraid, the rest is up to you for now.
+
+The next thing I would usually do is go through all the species in ```featuretable_rarefied600.csv``` and check that I trust these assignments. So for each species I would:
+
+1. Make sure that the species is found in the north Atlantic by looking it up in [FishBase](https://www.fishbase.de/). Some species get assigned to their Pacific counterparts, but the next couple of steps will help you sort this out.
+
+2. Find the species in the ```superblast_taxonomy.qzv``` file and make sure that the percent identity (confidence) is above 98%. A 98% or greater match seems to be pretty good for identifying fish to species level. If it is less than this, use the next step to help you decide whether it can be assigned to genus or just family level.
+
+3. Copy the featureIDs down and look them up in the ```merged_rep-seq.qzv``` file. I then blast the sequences against Genbank, to make sure that there isn't another species which also has a 98% or higher match **that is also found in the Atlantic**. This last point is key, because often there are Pacific species which are good matches, but you can rule them out easily based on the species distribution (fishbase is your friend). If there is another Atlantic species with a 98% match or greater, then just use the genus, E.g. *Ammodytes* usually gets a 98% match to *A. personnatus*, *A. dubius*, and *A. americanus*. We can rule out *personnatus* based on geography, but we cannot reliably differentiate *dubius* and *americanus*, so we just have to call them *Ammodytes sp.* If one fecal sample has multiple *Ammodytes* assignments, sum up the sequence counts. Same goes for river herrings, which also cannot be distinguished. 
+
+4. Repeat for all species in the table and edit the species assignments as needed. Sometimes there won't be a perfect match on GenBank, so use yoour judgement as to whether you can make a genus- or family-level call.
+
+5. What you do next is up to you, but I can also help when I get back. You can calculate alpha and beta diversity metrics in qiime and explore the other plugins. Or just start working with the data in R.
+
+Good luck!
