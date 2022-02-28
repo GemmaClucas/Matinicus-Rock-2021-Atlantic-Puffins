@@ -313,7 +313,7 @@ qiime metadata tabulate \
 ```
 This file can be used to look up the assignments made to individual features, and to search for species e.g. looking up "Aves" shows that nearly all sequences assigned to Aves were classified as puffins. 
 
-![Example of looking up "Aves" in the taxonomy file](MiFish/superblast_taxonomy_screenshot.png)
+![Example of looking up "Aves" in the taxonomy file](superblast_taxonomy_screenshot.png)
 
 ### Add a human sequence to the database manually
 I made an error and forgot to add humans to the database. I don't want to add them to my search term, as it will download thousands of human sequences, so I just found one complete mitochondrial genome on GenBank. I put this into a text document ```temp.txt``` and deleted the carriage returns at the end of each line using ```tr -d '\n' < temp.txt > output.txt ```. 
