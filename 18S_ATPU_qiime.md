@@ -174,7 +174,8 @@ overlap seems like a good setting to keep.
 
 I need to merge both the feature tables, which contain the counts of
 each feature, and the rep-seqs, which contain the actual sequence for
-each feature.
+each feature. The overlap method here doesn’t matter, as no samples were
+sequenced on multiple plates, but leaving it as ‘sum’ is fine.
 
 Note that this requires metadata for each sample, contained in
 metadata.txt. At the moment this is prety sparse as I didn’t have time
@@ -187,8 +188,7 @@ the samples. It just has to be saved as a tab-separated file.
     qiime feature-table merge \
       --i-tables table_Plate1.qza \
       --i-tables table_Plate2.qza \
-      --i-tables table_extras.qza \
-      --i-tables ../../2019_GoM_FecalMetabarcoding/Mifish/Puffin_tests/table_Puffin_tests.qza \
+      --i-tables table_Plate3.qza \
       --p-overlap-method sum \
       --o-merged-table merged-table.qza
       
@@ -200,10 +200,66 @@ the samples. It just has to be saved as a tab-separated file.
     qiime feature-table merge-seqs \
       --i-data rep-seqs_Plate1.qza \
       --i-data rep-seqs_Plate2.qza \
-      --i-data rep-seqs_extras.qza \
-      --i-data ../../2019_GoM_FecalMetabarcoding/Mifish/Puffin_tests/rep-seqs_Puffin_tests.qza \
+      --i-data rep-seqs_Plate3.qza \
       --o-merged-data merged_rep-seqs.qza
       
     qiime feature-table tabulate-seqs \
       --i-data merged_rep-seqs.qza \
       --o-visualization merged_rep-seqs.qzv
+
+## 5\. Assign taxonomy using Naive Bayes classifier
+
+I previously trained this classifier on sequences downloaded from the
+SILVA 132 database. I believe this is still the most recent version of
+the database available to download, and so I will use it here. More
+notes about these steps are saved in Evernote.
+
+The commands I ran for importing the database and training the
+classifier are below. I reran these because changes in versions of
+scikit-learn since I trained the classifier previously were causing
+errors.
+
+    # import database fasta file
+    qiime tools import \
+      --input-path /Users/gemmaclucas/Dropbox/Diets_from_poop/2019_terns_puffins_fecal_data_analysis/18S/SILVA_132_QIIME_release/rep_set/rep_set_18S_only/99/silva_132_99_18S.fna \
+      --output-path silva_132_99_18S_sequences.qza \
+      --type 'FeatureData[Sequence]'
+    
+    # extract region bounded by primers
+    qiime feature-classifier extract-reads \
+      --i-sequences silva_132_99_18S_sequences.qza \
+      --p-f-primer GGTCTGTGATGCCCTTAGATG \
+      --p-r-primer GGTGTGTACAAAGGGCAGGG \
+      --p-min-length 140  \
+      --p-max-length 210  \
+      --o-reads extracted-silva_132_99_18S_sequences.qza 
+    
+    # import taxonomy
+    qiime tools import \
+      --input-path /Users/gemmaclucas/Dropbox/Diets_from_poop/2019_terns_puffins_fecal_data_analysis/18S/SILVA_132_QIIME_release/taxonomy/18S_only/99/majority_taxonomy_7_levels.txt \
+      --input-format HeaderlessTSVTaxonomyFormat \
+      --type 'FeatureData[Taxonomy]' \
+      --output-path silva_132_99_18S_taxonomy.qza
+    
+    # train classifier  
+    qiime feature-classifier fit-classifier-naive-bayes \
+      --i-reference-reads extracted-silva_132_99_18S_sequences.qza \
+      --i-reference-taxonomy silva_132_99_18S_taxonomy.qza \
+      --o-classifier classifier.qza
+
+Now, using this classifier, I can assign taxonomy to these sequences and
+make a barplot to view them.
+
+    qiime feature-classifier classify-sklearn \
+      --i-classifier classifier.qza \
+      --i-reads merged_rep-seqs.qza \
+      --o-classification sklearn_taxonomy.qza
+      
+    qiime taxa barplot\
+          --i-table merged_table.qza\
+          --i-taxonomy sklearn_taxonomy.qza\
+          --m-metadata-file metadata.txt\
+          --o-visualization sklearn-taxa-barplots.qzv
+
+Things to do next: rarefaction curves, filter out unwanted taxa, what
+else?
