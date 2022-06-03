@@ -256,7 +256,7 @@ make a barplot to view them.
       --o-classification sklearn_taxonomy.qza
       
     qiime taxa barplot\
-          --i-table merged_table.qza\
+          --i-table merged-table.qza\
           --i-taxonomy sklearn_taxonomy.qza\
           --m-metadata-file metadata.txt\
           --o-visualization sklearn-taxa-barplots.qzv
