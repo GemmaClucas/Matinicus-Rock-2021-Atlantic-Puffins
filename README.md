@@ -6,7 +6,7 @@ Fecal metabarcoding analysis for samples collected on Matinicus Rock by Will Ken
 
 The [qiime documentation](https://docs.qiime2.org/2021.11/) is a fantastic resource and before you begin going through this, I would spend some time working through their help guides and tutorials. You can learn a lot from them and might find some better ways of doing things than I've got here, so feel free to modify this workflow as needed.
 
-
+Below are all the steps for the MiFish analysis. The steps for analysing the 18S data can be found [here](https://github.com/GemmaClucas/Matinicus-Rock-2021-Atlantic-Puffins/blob/main/18S_ATPU_qiime.md).
 
 ## 1. Import the data into Qiime2
 
