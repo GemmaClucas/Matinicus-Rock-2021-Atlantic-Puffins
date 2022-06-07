@@ -259,7 +259,93 @@ make a barplot to view them.
           --i-table merged-table.qza\
           --i-taxonomy sklearn_taxonomy.qza\
           --m-metadata-file metadata.txt\
-          --o-visualization sklearn-taxa-barplots.qzv
+          --o-visualization barplot_sklearn-taxa.qzv
 
-Things to do next: rarefaction curves, filter out unwanted taxa, what
-else?
+## 6\. Filter out non-metazoan and avian sequences
+
+Use the `--p-incude` flag to include only features with “Metazoa” in the
+taxonomoy string and remake barplot.
+
+    qiime taxa filter-table \
+      --i-table merged-table.qza \
+      --i-taxonomy sklearn_taxonomy.qza \
+      --p-include Metazoa \
+      --o-filtered-table merged-table_onlymetazoa.qza
+      
+    qiime taxa barplot\
+          --i-table merged-table_onlymetazoa.qza\
+          --i-taxonomy sklearn_taxonomy.qza\
+          --m-metadata-file metadata.txt\
+          --o-visualization barplot_sklearn-taxa_onlymetazoa.qzv
+
+This looks better, although there is a lot of bird DNA in the samples
+and also some mammalian DNA (most likely human). Exclude this next:
+
+    qiime taxa filter-table \
+      --i-table merged-table_onlymetazoa.qza \
+      --i-taxonomy sklearn_taxonomy.qza \
+      --p-exclude Aves,Mammalia \
+      --o-filtered-table merged-table_noBirdsMammals.qza
+      
+    qiime feature-table summarize \
+        --i-table merged-table_noBirdsMammals.qza \
+        --m-sample-metadata-file metadata.txt \
+        --o-visualization merged-table_noBirdsMammals.qzv
+      
+    qiime taxa barplot\
+          --i-table merged-table_noBirdsMammals.qza \
+          --i-taxonomy sklearn_taxonomy.qza\
+          --m-metadata-file metadata.txt\
+          --o-visualization barplot_sklearn-taxa_noBirdsMammals
+
+## 7\. Calculate rarefaction curves
+
+First you have to collapse the taxonomy, so you are counting species and
+not ASVs.
+
+    qiime taxa collapse \
+        --i-table merged-table_noBirdsMammals.qza \
+        --i-taxonomy sklearn_taxonomy.qza \
+        --p-level 7 \
+        --o-collapsed-table merged-collapsed-table_noBirdsMammals.qza
+    
+    qiime feature-table summarize \
+        --i-table merged-collapsed-table_noBirdsMammals.qza \
+        --m-sample-metadata-file metadata.txt \
+        --o-visualization merged-collapsed-table_noBirdsMammals.qzv
+    
+    qiime diversity alpha-rarefaction \
+        --i-table merged-collapsed-table_noBirdsMammals.qza \
+        --m-metadata-file metadata.txt \
+        --p-min-depth 100 \
+        --p-max-depth 10000 \
+        --o-visualization alpha-rarefaction-100-10000
+
+The observed number of features in the samples flattens off at a depth
+between 4000-6000 reads -\> redo the rarefaction curve to focus on this
+region:
+
+    qiime diversity alpha-rarefaction \
+        --i-table merged-collapsed-table_noBirdsMammals.qza \
+        --m-metadata-file metadata.txt \
+        --p-min-depth 2000 \
+        --p-max-depth 7000 \
+        --o-visualization alpha-rarefaction-2000-7000
+
+5500 sequences looks to be the sweet spot for capturing all the
+diversity -\> rarefy all samples to this depth.
+
+## 8\. Rarefy to a depth of 5500 reads
+
+    qiime feature-table rarefy \
+      --i-table merged-table_noBirdsMammals.qza \
+      --p-sampling-depth 5500 \
+      --o-rarefied-table merged-table_noBirdsMammals_rarefied5500
+      
+    qiime taxa barplot \
+      --i-table merged-table_noBirdsMammals_rarefied5500.qza \
+      --i-taxonomy sklearn_taxonomy.qza \
+      --m-metadata-file metadata.txt \
+      --o-visualization barplot_noBirdsMammals_rarefied5500.qzv
+
+This leaves 79 samples with a depth greater than 5500.
