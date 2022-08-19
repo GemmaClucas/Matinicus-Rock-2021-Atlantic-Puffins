@@ -3,7 +3,7 @@
 Gemma Clucas
 6/3/2022
 
-## 1\. Import the data into Qiime2
+## 1. Import the data into Qiime2
 
 First, load qiime environment and cd to correct directory in the
 terminal.
@@ -11,36 +11,34 @@ terminal.
     cd /Users/gemmaclucas/GitHub/Fecal_metabarcoding/Matinicus-Rock-2021-Atlantic-Puffins
     conda activate qiime2-2021.4
 
-The raw reads are saved on my solid state hardrive, Data\_SS1. There are
+The raw reads are saved on my solid state hardrive, Data_SS1. There are
 two whole plates, plates 1 and 2, and then some samples on
-Fecal\_Plate\_15. I moved these extra files into their own directory so
-as not to confuse them with the terns on that plate.
+Fecal_Plate_15. I moved these extra files into their own directory so as
+not to confuse them with the terns on that plate.
 
-``` 
-qiime tools import\
-  --type 'SampleData[PairedEndSequencesWithQuality]'\
-  --input-path /Volumes/Data_SS1/18S/ATPU_WillK_2021/2021_ATPU_Plate1_WillK/reads/ \
-  --input-format CasavaOneEightSingleLanePerSampleDirFmt\
-  --output-path 18S/demux_plate1.qza
-  
-qiime tools import\
-  --type 'SampleData[PairedEndSequencesWithQuality]'\
-  --input-path /Volumes/Data_SS1/18S/ATPU_WillK_2021/2021_ATPU_Plate2_WillK/reads/ \
-  --input-format CasavaOneEightSingleLanePerSampleDirFmt\
-  --output-path 18S/demux_plate2.qza
-  
-qiime tools import\
-  --type 'SampleData[PairedEndSequencesWithQuality]'\
-  --input-path /Volumes/Data_SS1/18S/ATPU_WillK_2021/2021_ATPU_WillK_Plate15extras/reads/ \
-  --input-format CasavaOneEightSingleLanePerSampleDirFmt\
-  --output-path 18S/demux_plate3.qza  
-```
+    qiime tools import\
+      --type 'SampleData[PairedEndSequencesWithQuality]'\
+      --input-path /Volumes/Data_SS1/18S/ATPU_WillK_2021/2021_ATPU_Plate1_WillK/reads/ \
+      --input-format CasavaOneEightSingleLanePerSampleDirFmt\
+      --output-path 18S/demux_plate1.qza
+      
+    qiime tools import\
+      --type 'SampleData[PairedEndSequencesWithQuality]'\
+      --input-path /Volumes/Data_SS1/18S/ATPU_WillK_2021/2021_ATPU_Plate2_WillK/reads/ \
+      --input-format CasavaOneEightSingleLanePerSampleDirFmt\
+      --output-path 18S/demux_plate2.qza
+      
+    qiime tools import\
+      --type 'SampleData[PairedEndSequencesWithQuality]'\
+      --input-path /Volumes/Data_SS1/18S/ATPU_WillK_2021/2021_ATPU_WillK_Plate15extras/reads/ \
+      --input-format CasavaOneEightSingleLanePerSampleDirFmt\
+      --output-path 18S/demux_plate3.qza  
 
 Move to the diectory where all the next steps will take place. Summarise
 read quality and number of reads for each plate.
 
     cd 18S/
-    
+
     for K in {1..3}; do
       qiime demux summarize \
         --i-data demux_plate$K.qza \
@@ -51,7 +49,7 @@ View `.qzv` files at [view.qiime2.org](view.qiime2.org). The quality of
 the reads looks good. Most samples have tens of thousands of reads,
 which should be enough.
 
-## 2\. Trim primers using cutadapt
+## 2. Trim primers using cutadapt
 
 The MiFish sequences are:
 
@@ -89,13 +87,11 @@ samples, which is a good sign.
 Make new visualisations to see how many sequences are left and their
 quality scores.
 
-``` 
-for K in {1..3}; do
-  qiime demux summarize \
-    --i-data trimd_Plate$K.qza \
-    --o-visualization trimd_Plate$K.qzv
-done 
-```
+    for K in {1..3}; do
+      qiime demux summarize \
+        --i-data trimd_Plate$K.qza \
+        --o-visualization trimd_Plate$K.qzv
+    done 
 
 Looking at the trimd.qzv files, things look good.
 
@@ -126,7 +122,7 @@ To see how much data passed the filter for each sample:
 
 About 90% passed the filter here for all samples. That’s pretty normal.
 
-## 3\. Denoise with dada2
+## 3. Denoise with dada2
 
 With previous 18S data, truncating the length to 150 seemed to work
 well. I haven’t used the –p-min-overlap setting before, as this is a new
@@ -167,10 +163,10 @@ after merging plates)
       --i-data rep-seqs_Plate1.qza \
       --o-visualization rep-seqs_Plate1
 
-This looks good. All sequences are ~169-171bp. Using 50 as a minimum
+This looks good. All sequences are \~169-171bp. Using 50 as a minimum
 overlap seems like a good setting to keep.
 
-## 4\. Merge across plates
+## 4. Merge across plates
 
 I need to merge both the feature tables, which contain the counts of
 each feature, and the rep-seqs, which contain the actual sequence for
@@ -207,7 +203,7 @@ the samples. It just has to be saved as a tab-separated file.
       --i-data merged_rep-seqs.qza \
       --o-visualization merged_rep-seqs.qzv
 
-## 5\. Assign taxonomy using Naive Bayes classifier
+## 5. Assign taxonomy using Naive Bayes classifier
 
 I previously trained this classifier on sequences downloaded from the
 SILVA 132 database. I believe this is still the most recent version of
@@ -224,7 +220,7 @@ errors.
       --input-path /Users/gemmaclucas/Dropbox/Diets_from_poop/2019_terns_puffins_fecal_data_analysis/18S/SILVA_132_QIIME_release/rep_set/rep_set_18S_only/99/silva_132_99_18S.fna \
       --output-path silva_132_99_18S_sequences.qza \
       --type 'FeatureData[Sequence]'
-    
+
     # extract region bounded by primers
     qiime feature-classifier extract-reads \
       --i-sequences silva_132_99_18S_sequences.qza \
@@ -233,14 +229,14 @@ errors.
       --p-min-length 140  \
       --p-max-length 210  \
       --o-reads extracted-silva_132_99_18S_sequences.qza 
-    
+
     # import taxonomy
     qiime tools import \
       --input-path /Users/gemmaclucas/Dropbox/Diets_from_poop/2019_terns_puffins_fecal_data_analysis/18S/SILVA_132_QIIME_release/taxonomy/18S_only/99/majority_taxonomy_7_levels.txt \
       --input-format HeaderlessTSVTaxonomyFormat \
       --type 'FeatureData[Taxonomy]' \
       --output-path silva_132_99_18S_taxonomy.qza
-    
+
     # train classifier  
     qiime feature-classifier fit-classifier-naive-bayes \
       --i-reference-reads extracted-silva_132_99_18S_sequences.qza \
@@ -261,7 +257,7 @@ make a barplot to view them.
           --m-metadata-file metadata.txt\
           --o-visualization barplot_sklearn-taxa.qzv
 
-## 6\. Filter out non-metazoan and avian sequences
+## 6. Filter out non-metazoan, avian, and parasite sequences
 
 Use the `--p-incude` flag to include only features with “Metazoa” in the
 taxonomoy string and remake barplot.
@@ -298,54 +294,75 @@ and also some mammalian DNA (most likely human). Exclude this next:
           --m-metadata-file metadata.txt\
           --o-visualization barplot_sklearn-taxa_noBirdsMammals
 
-## 7\. Calculate rarefaction curves
+Will went through what was left and highlighted the parasites to remove.
+Remove these next:
+
+    qiime taxa filter-table \
+      --i-table merged-table_noBirdsMammals.qza \
+      --i-taxonomy sklearn_taxonomy.qza \
+      --p-exclude Acari,Chromadorea,Eucestoda,Digenea,Monstrilloida,Siphonostomatoida,Opistorchiida,Plagiorchiida,Echinorhynchida,Trichocephalida \
+      --o-filtered-table merged-table_noBirdsMammalsParasites.qza
+      
+    qiime feature-table summarize \
+        --i-table merged-table_noBirdsMammalsParasites.qza \
+        --m-sample-metadata-file metadata.txt \
+        --o-visualization merged-table_noBirdsMammalsParasites.qzv
+      
+    qiime taxa barplot\
+          --i-table merged-table_noBirdsMammalsParasites.qza \
+          --i-taxonomy sklearn_taxonomy.qza\
+          --m-metadata-file metadata.txt\
+          --o-visualization barplot_sklearn-taxa_noBirdsMammalsParasites
+
+## 7. Calculate rarefaction curves
 
 First you have to collapse the taxonomy, so you are counting species and
 not ASVs.
 
     qiime taxa collapse \
-        --i-table merged-table_noBirdsMammals.qza \
+        --i-table merged-table_noBirdsMammalsParasites.qza \
         --i-taxonomy sklearn_taxonomy.qza \
         --p-level 7 \
-        --o-collapsed-table merged-collapsed-table_noBirdsMammals.qza
-    
+        --o-collapsed-table merged-collapsed-table_noBirdsMammalsParasites.qza
+
     qiime feature-table summarize \
-        --i-table merged-collapsed-table_noBirdsMammals.qza \
+        --i-table merged-collapsed-table_noBirdsMammalsParasites.qza \
         --m-sample-metadata-file metadata.txt \
-        --o-visualization merged-collapsed-table_noBirdsMammals.qzv
-    
+        --o-visualization merged-collapsed-table_noBirdsMammalsParasites.qzv
+
     qiime diversity alpha-rarefaction \
-        --i-table merged-collapsed-table_noBirdsMammals.qza \
+        --i-table merged-collapsed-table_noBirdsMammalsParasites.qza \
         --m-metadata-file metadata.txt \
         --p-min-depth 100 \
         --p-max-depth 10000 \
-        --o-visualization alpha-rarefaction-100-10000
+        --o-visualization alpha-rarefaction-100-10000_noBirdsMammalsParasites
 
 The observed number of features in the samples flattens off at a depth
-between 4000-6000 reads -\> redo the rarefaction curve to focus on this
+between 3000-4000 reads -\> redo the rarefaction curve to focus on this
 region:
 
     qiime diversity alpha-rarefaction \
-        --i-table merged-collapsed-table_noBirdsMammals.qza \
+        --i-table merged-collapsed-table_noBirdsMammalsParasites.qza \
         --m-metadata-file metadata.txt \
-        --p-min-depth 2000 \
-        --p-max-depth 7000 \
-        --o-visualization alpha-rarefaction-2000-7000
+        --p-min-depth 1000 \
+        --p-max-depth 5000 \
+        --o-visualization alpha-rarefaction-1000-5000_noBirdsMammalsParasites
 
-5500 sequences looks to be the sweet spot for capturing all the
-diversity -\> rarefy all samples to this depth.
+2750 sequences looks to be sufficient for capturing all the diversity
+-\> rarefy all samples to this depth.
 
-## 8\. Rarefy to a depth of 5500 reads
+## 8. Rarefy to a depth of 2750 reads
 
     qiime feature-table rarefy \
-      --i-table merged-table_noBirdsMammals.qza \
-      --p-sampling-depth 5500 \
-      --o-rarefied-table merged-table_noBirdsMammals_rarefied5500
+      --i-table merged-table_noBirdsMammalsParasites.qza \
+      --p-sampling-depth 2750 \
+      --o-rarefied-table merged-table_noBirdsMammalsParasites_rarefied2750
       
     qiime taxa barplot \
-      --i-table merged-table_noBirdsMammals_rarefied5500.qza \
+      --i-table merged-table_noBirdsMammalsParasites_rarefied2750.qza \
       --i-taxonomy sklearn_taxonomy.qza \
       --m-metadata-file metadata.txt \
-      --o-visualization barplot_noBirdsMammals_rarefied5500.qzv
+      --o-visualization barplot_noBirdsMammalsParasites_rarefied2750.qzv
 
-This leaves 79 samples with a depth greater than 5500.
+This leaves 78 samples with a depth greater than 2750 - why has it gone
+down?
