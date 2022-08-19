@@ -243,7 +243,7 @@ qiime taxa barplot\
       --o-visualization barplot_sklearn-taxa.qzv
 ```
 
-## 6. Filter out non-metazoan and avian sequences
+## 6. Filter out non-metazoan, avian, and parasite sequences
 
 Use the ```--p-incude``` flag to include only features with "Metazoa" in the taxonomoy string and remake barplot.
 ```
@@ -280,52 +280,72 @@ qiime taxa barplot\
       --o-visualization barplot_sklearn-taxa_noBirdsMammals
 ```
 
+Will went through what was left and highlighted the parasites to remove. Remove these next:
+```
+qiime taxa filter-table \
+  --i-table merged-table_noBirdsMammals.qza \
+  --i-taxonomy sklearn_taxonomy.qza \
+  --p-exclude Acari,Chromadorea,Eucestoda,Digenea,Monstrilloida,Siphonostomatoida,Opistorchiida,Plagiorchiida,Echinorhynchida,Trichocephalida \
+  --o-filtered-table merged-table_noBirdsMammalsParasites.qza
+  
+qiime feature-table summarize \
+    --i-table merged-table_noBirdsMammalsParasites.qza \
+    --m-sample-metadata-file metadata.txt \
+    --o-visualization merged-table_noBirdsMammalsParasites.qzv
+  
+qiime taxa barplot\
+      --i-table merged-table_noBirdsMammalsParasites.qza \
+      --i-taxonomy sklearn_taxonomy.qza\
+      --m-metadata-file metadata.txt\
+      --o-visualization barplot_sklearn-taxa_noBirdsMammalsParasites
+```
+
 ## 7. Calculate rarefaction curves 
 
 First you have to collapse the taxonomy, so you are counting species and not ASVs.
 ```
 qiime taxa collapse \
-    --i-table merged-table_noBirdsMammals.qza \
+    --i-table merged-table_noBirdsMammalsParasites.qza \
     --i-taxonomy sklearn_taxonomy.qza \
     --p-level 7 \
-    --o-collapsed-table merged-collapsed-table_noBirdsMammals.qza
+    --o-collapsed-table merged-collapsed-table_noBirdsMammalsParasites.qza
 
 qiime feature-table summarize \
-    --i-table merged-collapsed-table_noBirdsMammals.qza \
+    --i-table merged-collapsed-table_noBirdsMammalsParasites.qza \
     --m-sample-metadata-file metadata.txt \
-    --o-visualization merged-collapsed-table_noBirdsMammals.qzv
+    --o-visualization merged-collapsed-table_noBirdsMammalsParasites.qzv
 
 qiime diversity alpha-rarefaction \
-    --i-table merged-collapsed-table_noBirdsMammals.qza \
+    --i-table merged-collapsed-table_noBirdsMammalsParasites.qza \
     --m-metadata-file metadata.txt \
     --p-min-depth 100 \
     --p-max-depth 10000 \
-    --o-visualization alpha-rarefaction-100-10000
+    --o-visualization alpha-rarefaction-100-10000_noBirdsMammalsParasites
 ```
-The observed number of features in the samples flattens off at a depth between 4000-6000 reads -> redo the rarefaction curve to focus on this region:
+The observed number of features in the samples flattens off at a depth between 3000-4000 reads -> redo the rarefaction curve to focus on this region:
 ```
 qiime diversity alpha-rarefaction \
-    --i-table merged-collapsed-table_noBirdsMammals.qza \
+    --i-table merged-collapsed-table_noBirdsMammalsParasites.qza \
     --m-metadata-file metadata.txt \
-    --p-min-depth 2000 \
-    --p-max-depth 7000 \
-    --o-visualization alpha-rarefaction-2000-7000
+    --p-min-depth 1000 \
+    --p-max-depth 5000 \
+    --o-visualization alpha-rarefaction-1000-5000_noBirdsMammalsParasites
 ```
 
-5500 sequences looks to be the sweet spot for capturing all the diversity -> rarefy all samples to this depth.
+2750 sequences looks to be sufficient for capturing all the diversity -> rarefy all samples to this depth.
 
-## 8. Rarefy to a depth of 5500 reads
+## 8. Rarefy to a depth of 2750 reads
 
 ```
 qiime feature-table rarefy \
-  --i-table merged-table_noBirdsMammals.qza \
-  --p-sampling-depth 5500 \
-  --o-rarefied-table merged-table_noBirdsMammals_rarefied5500
+  --i-table merged-table_noBirdsMammalsParasites.qza \
+  --p-sampling-depth 2750 \
+  --o-rarefied-table merged-table_noBirdsMammalsParasites_rarefied2750
   
 qiime taxa barplot \
-  --i-table merged-table_noBirdsMammals_rarefied5500.qza \
+  --i-table merged-table_noBirdsMammalsParasites_rarefied2750.qza \
   --i-taxonomy sklearn_taxonomy.qza \
   --m-metadata-file metadata.txt \
-  --o-visualization barplot_noBirdsMammals_rarefied5500.qzv
+  --o-visualization barplot_noBirdsMammalsParasites_rarefied2750.qzv
 ```
-This leaves 79 samples with a depth greater than 5500.
+This leaves 78 samples with a depth greater than 2750 - why has it gone down?
