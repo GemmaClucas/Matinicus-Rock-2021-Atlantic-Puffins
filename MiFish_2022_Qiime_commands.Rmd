@@ -76,12 +76,59 @@ for K in {1..3}; do
     --verbose > cutadapt_out_Plate$3.txt
 done
 ```
+I accidentally messed up the verbose bit of this command, so it only printed the output for the last plate (the others would have been over-written). But this isn't really a big deal.
+
+Make new visualisations to see how many sequences are left and their quality scores.
+```
+for K in {1..3}; do
+  qiime demux summarize \
+    --i-data trimd_Plate$K.qza \
+    --o-visualization trimd_Plate$K.qzv
+done 
+```
+All looks good.
+
+### Trim 5' ends of reads
+All R1 should begin with the forward primer: GTCGGTAAAACTCGTGCCAGC (21 bases).
+All R2 should begin with the reverse primer: CATAGTGGGGTATCTAATCCCAGTTTG (27 bases).
+
+Trim these with the following commands:
+
+```
+for K in {1..3}; do
+  qiime cutadapt trim-paired \
+    --i-demultiplexed-sequences trimd_Plate$K.qza \
+    --p-front-f GTCGGTAAAACTCGTGCCAGC \
+    --p-front-r CATAGTGGGGTATCTAATCCCAGTTTG \
+    --o-trimmed-sequences trimd2_Plate$K.qza \
+    --verbose > cutadapt_out2_Plate$K.txt
+done
+```
 
 To see how much data passed the filter for each sample:
 ```
-grep "Total written (filtered):" cutadapt_out_Plate1.txt 
-grep "Total written (filtered):" cutadapt_out_Plate2.txt
-grep "Total written (filtered):" cutadapt_out_Plate3.txt
+grep "Total written (filtered):" cutadapt_out2_Plate1.txt 
+grep "Total written (filtered):" cutadapt_out2_Plate2.txt
+grep "Total written (filtered):" cutadapt_out2_Plate3.txt
 ```
+About 90% passed the filter here for all samples. That's pretty normal.
 
+## 3. Denoise with dada2
+I am going to use the same settings that I found worked best for the 2017-2019 tern fecal samples, except I am adding the --p-min-overlap parameter. If I don't use this, I seem to be getting a load of rubbish reads which are 250bp long and start with long strings of Cs. This option is only available in qiime2-2021.4 and later. I didn't get these rubbish reads before, so I'm not sure what has changed, but the overlap filter seems to fix it. 
 
+Note, this step can be a little slow to run.
+```
+for K in {1..3}; do
+  qiime dada2 denoise-paired \
+    --i-demultiplexed-seqs trimd2_Plate$K.qza \
+    --p-trunc-len-f 133 \
+    --p-trunc-len-r 138 \
+    --p-trim-left-f 0 \
+    --p-trim-left-r 0 \
+    --p-min-overlap 50 \
+    --p-n-threads 16 \
+    --o-representative-sequences rep-seqs_Plate$K \
+    --o-table table_Plate$K \
+    --o-denoising-stats denoise_Plate$K
+done
+```
