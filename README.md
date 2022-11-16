@@ -215,7 +215,7 @@ This looks good. Using 50 as a minimum overlap seems to get rid of junk sequence
 ## 4. Merge across plates
 I need to merge both the feature tables, which contain the counts of each feature, and the rep-seqs, which contain the actual sequence for each feature. I am using the ```sum``` overlap method so that the data from the samples we sent in as tests are added to the data we got from them when we sequenced them again on the plate.
 
-Note that this requires metadata for each sample, contained in metadata.txt. At the moment this is prety sparse as I didn't have time to add it all, but if you populate it with breeding stage, breeding period, substrate etc then it's easy to visalise those different groups in the later steps of this analysis, so I would recommend editing the metadata file. You can add any number of new columns to add info about the samples. It just has to be saved as a tab-separated file. 
+Note that this requires metadata for each sample, contained in metadata.txt. At the moment this is pretty sparse as I didn't have time to add it all, but if you populate it with breeding stage, breeding period, substrate etc then it's easy to visualise those different groups in the later steps of this analysis, so I would recommend editing the metadata file. You can add any number of new columns to add info about the samples. It just has to be saved as a tab-separated file. 
 ```
 qiime feature-table merge \
   --i-tables table_Plate1.qza \
