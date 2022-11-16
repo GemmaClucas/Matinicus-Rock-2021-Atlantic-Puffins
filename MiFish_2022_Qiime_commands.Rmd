@@ -132,3 +132,63 @@ for K in {1..3}; do
     --o-denoising-stats denoise_Plate$K
 done
 ```
+
+Create visualizations for the denoising stats.
+```
+for K in {1..3}; do  
+  qiime metadata tabulate\
+    --m-input-file denoise_Plate$K.qza\
+    --o-visualization denoise_Plate$K.qzv
+done
+```
+
+
+## 4. Merge across plates
+
+Note that this requires metadata for each sample, contained in metadata.txt. 
+
+```
+qiime feature-table merge \
+  --i-tables table_Plate1.qza \
+  --i-tables table_Plate2.qza \
+  --i-tables table_Plate3.qza \
+  --p-overlap-method sum \
+  --o-merged-table merged-table.qza
+  
+qiime feature-table summarize \
+    --i-table merged-table.qza \
+    --m-sample-metadata-file metadata.txt \
+    --o-visualization merged-table
+    
+qiime feature-table merge-seqs \
+  --i-data rep-seqs_Plate1.qza \
+  --i-data rep-seqs_Plate2.qza \
+  --i-data rep-seqs_Plate3.qza \
+  --o-merged-data merged_rep-seqs.qza
+  
+qiime feature-table tabulate-seqs \
+  --i-data merged_rep-seqs.qza \
+  --o-visualization merged_rep-seqs.qzv
+
+```
+
+NEED TO MAKE METADATA FILE BEFORE RUNNING ONE OF THESE COMMANDS (RAN THE REST).
+
+## 5.Assign taxonomy using same database as for 2021 samples
+Note, I am using the exact same database files that I used for the 2021 samples.
+
+```
+conda activate qiime2-2019.4
+
+../MiFish/mktaxa.py \
+  ../MiFish/editing_database/ncbi-refseqs-withHuman.qza \
+  ../MiFish/editing_database/ncbi-taxonomy-withHuman.qza \
+  merged_rep-seqs.qza
+```
+Make the visualisation.
+```
+qiime metadata tabulate \
+  --m-input-file superblast_taxonomy.qza \
+  --o-visualization superblast_taxonomy
+```
+
