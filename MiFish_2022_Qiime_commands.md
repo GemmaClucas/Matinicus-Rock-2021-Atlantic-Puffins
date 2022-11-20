@@ -173,10 +173,7 @@ metadata.txt.
       --i-data merged_rep-seqs.qza \
       --o-visualization merged_rep-seqs.qzv
 
-NEED TO MAKE METADATA FILE BEFORE RUNNING ONE OF THESE COMMANDS (RAN THE
-REST).
-
-## 5.Assign taxonomy using same database as for 2021 samples
+## 5. Assign taxonomy using same database as for 2021 samples
 
 Note, I am using the exact same database files that I used for the 2021
 samples.
@@ -193,3 +190,112 @@ Make the visualisation.
     qiime metadata tabulate \
       --m-input-file superblast_taxonomy.qza \
       --o-visualization superblast_taxonomy
+
+## 6. Make some barplots
+
+I want to see how many puffin, human, and unassigned sequences there
+were.
+
+    qiime taxa barplot \
+      --i-table merged-table.qza \
+      --i-taxonomy superblast_taxonomy.qza \
+      --m-metadata-file metadata.txt \
+      --o-visualization barplot_before_filtering.qzv
+
+As with the 2021 samples, quite a lot of the samples had 100% avian DNA,
+which is annoying since we can’t recover any fish DNA from them. I
+haven’t seen this in terns before. Perhaps the primers are a better
+match to puffins? Or perhaps the birds hadn’t fed on anything recently?
+Not sure.
+
+## 7. Remove non-food reads
+
+Filter out any sequences from the bird, mammals (human), and unnassigned
+sequences since we’re not interested in these.
+
+    qiime taxa filter-table \
+      --i-table merged-table.qza \
+      --i-taxonomy superblast_taxonomy.qza \
+      --p-exclude Unassigned,Aves,Mammalia \
+      --o-filtered-table merged_table_noBirdsMammalsUnassigned.qza
+      
+    qiime feature-table summarize \
+        --i-table merged_table_noBirdsMammalsUnassigned.qza \
+        --m-sample-metadata-file metadata.txt \
+        --o-visualization merged_table_noBirdsMammalsUnassigned
+
+Barplot having removed bird/human/unassigned DNA:
+
+    qiime taxa barplot \
+      --i-table merged_table_noBirdsMammalsUnassigned.qza \
+      --i-taxonomy superblast_taxonomy.qza \
+      --m-metadata-file metadata.txt \
+      --o-visualization barplot_noBirdsMammalsUnassigned.qzv
+
+## 9. Calculate alpha rarefaction curves
+
+Last year we found a depth of 600 was sufficient for recovering all of
+the diversity in the samples. I should use this again this year to be
+consistent, but I want to check this too.
+
+Also, I get a seg fault in the older version, so reload qiime2-2021.4
+first.
+
+    conda activate qiime2-2021.4
+
+    qiime taxa collapse \
+      --i-table merged_table_noBirdsMammalsUnassigned.qza \
+      --i-taxonomy superblast_taxonomy.qza \
+      --p-level 7 \
+      --o-collapsed-table merged_table_noBirdsMammalsUnassigned_collapsed.qza
+
+    qiime diversity alpha-rarefaction \
+      --i-table merged_table_noBirdsMammalsUnassigned_collapsed.qza \
+      --m-metadata-file metadata.txt \
+      --p-min-depth 100 \
+      --p-max-depth 20000 \
+      --o-visualization alpha-rarefaction-100-20000
+
+The curve for the observed OTUs (species) increases from 100 to 2000,
+and again above 9000, which is very high - maybe we’re picking up super
+low concentrations of DNA from past meals at this depth.
+
+To compare to last year, repeat the rarefaction for values less than
+2000.
+
+    qiime diversity alpha-rarefaction \
+      --i-table merged_table_noBirdsMammalsUnassigned_collapsed.qza \
+      --m-metadata-file metadata.txt \
+      --p-min-depth 100 \
+      --p-max-depth 2500 \
+      --o-visualization alpha-rarefaction-100-2500
+
+Shannon diversity is still flat for the samples. The observed OTUs has
+plateued by 400. This suggests that 600 that we used last year is fine
+for now.
+
+## 10. Rarefy to a deph of 600 and redo barplots
+
+Rarefying all samples to a depth of 600 to be consistent with 2021
+samples.
+
+Note, this is done on the un-collapsed table.
+
+    qiime feature-table rarefy \
+      --i-table merged_table_noBirdsMammalsUnassigned.qza \
+      --p-sampling-depth 600 \
+      --o-rarefied-table merged_table_noBirdsMammalsUnassigned_rarefied600
+      
+    qiime taxa barplot \
+      --i-table merged_table_noBirdsMammalsUnassigned_rarefied600.qza \
+      --i-taxonomy superblast_taxonomy.qza \
+      --m-metadata-file metadata.txt \
+      --o-visualization barplot_oBirdsMammalsUnassigned_rarefied600.qzv
+
+I downloaded the CSV and sent it to Will.
+
+I tried briefly to compare the 25 samples we had done last year and
+again on the robot, but realised that the naming convention is not the
+same, so ATPU1 from last year is not the same sample as ATPU2021_1. Will
+look at this when there’s more time to figure out exactly which sample
+is which.
