@@ -51,7 +51,7 @@ which should be enough.
 
 ## 2. Trim primers using cutadapt
 
-The MiFish sequences are:
+The 18S sequences are:
 
 F primer: GGTCTGTGATGCCCTTAGATG (21 bp) R primer: GGTGTGTACAAAGGGCAGGG
 (20 bp)
