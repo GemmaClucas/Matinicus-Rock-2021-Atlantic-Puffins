@@ -8,7 +8,7 @@ The [qiime documentation](https://docs.qiime2.org/2021.11/) is a fantastic resou
 
 Below are all the steps for the MiFish analysis for the 2021 samples. The steps for the 2022 samples are essentially the same, but a record of the code I ran is [here](https://github.com/GemmaClucas/Matinicus-Rock-2021-Atlantic-Puffins/blob/main/MiFish_2022_Qiime_commands.md).
 
-The steps for analysing the 18S data in 2021 can be found [here](https://github.com/GemmaClucas/Matinicus-Rock-2021-Atlantic-Puffins/blob/main/18S_ATPU_qiime.md) and for 2022 samples [here](). Again, the code for 2022 is essentially the same as for 2021, but I like to keep a separate record of the exact code I ran.
+The steps for analysing the 18S data in 2021 can be found [here](https://github.com/GemmaClucas/Matinicus-Rock-2021-Atlantic-Puffins/blob/main/18S_ATPU_qiime.md) and for 2022 samples [here](https://github.com/GemmaClucas/Matinicus-Rock-2021-Atlantic-Puffins/blob/main/18S_ATPU_2022_qiime_commands.md). Again, the code for 2022 is essentially the same as for 2021, but I like to keep a separate record of the exact code I ran.
 
 ## 1. Import the data into Qiime2
 
