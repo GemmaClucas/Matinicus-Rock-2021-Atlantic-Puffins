@@ -1,0 +1,50 @@
+18S_ATPU_2022_qiime_commands
+================
+Gemma Clucas
+2023-03-24
+
+## 1. Import the data into Qiime2
+
+First, load qiime environment and cd to correct directory in the
+terminal.
+
+    cd /Users/gemmaclucas/GitHub/Fecal_metabarcoding/Matinicus-Rock-2021-Atlantic-Puffins
+    conda activate qiime2-2021.4
+
+The raw reads are saved on my solid state hardrive, Data_SS1. There are
+two whole plates, plates 1 and 2, and then the third plate is nearly
+complete but has some tropic bird samples on it. I am going to analyse
+these alongside the ATPU samples so that they’re done.
+
+    qiime tools import\
+      --type 'SampleData[PairedEndSequencesWithQuality]'\
+      --input-path /Volumes/Data_SS1/18S/ATPU_WillK_2022/Plate1/reads/ \
+      --input-format CasavaOneEightSingleLanePerSampleDirFmt\
+      --output-path 18S_2022/demux_plate1.qza
+      
+    qiime tools import\
+      --type 'SampleData[PairedEndSequencesWithQuality]'\
+      --input-path /Volumes/Data_SS1/18S/ATPU_WillK_2022/Plate2/reads/ \
+      --input-format CasavaOneEightSingleLanePerSampleDirFmt\
+      --output-path 18S_2022/demux_plate2.qza
+      
+    qiime tools import\
+      --type 'SampleData[PairedEndSequencesWithQuality]'\
+      --input-path /Volumes/Data_SS1/18S/ATPU_WillK_2022/Plate3/reads \
+      --input-format CasavaOneEightSingleLanePerSampleDirFmt\
+      --output-path 18S_2022/demux_plate3.qza  
+
+Move to the directory where all the next steps will take place.
+Summarise read quality and number of reads for each plate.
+
+    cd 18S_2022/
+
+    for K in {1..3}; do
+      qiime demux summarize \
+        --i-data demux_plate$K.qza \
+        --o-visualization demux_Plate$K.qzv
+    done
+
+View `.qzv` files at [view.qiime2.org](view.qiime2.org). The quality of
+the reads looks good. Most samples have tens of thousands of reads,
+which should be enough.
