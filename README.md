@@ -1,12 +1,14 @@
-# Matinicus-Rock-2021-Atlantic-Puffins
+# Matinicus-Rock-Atlantic-Puffins
 
 Started 15th Dec 2021
 
-Fecal metabarcoding analysis for samples collected on Matinicus Rock by Will Kennerley, 2021.
+Fecal metabarcoding analysis for samples collected on Matinicus Rock by Will Kennerley in  2021 and 2022.
 
 The [qiime documentation](https://docs.qiime2.org/2021.11/) is a fantastic resource and before you begin going through this, I would spend some time working through their help guides and tutorials. You can learn a lot from them and might find some better ways of doing things than I've got here, so feel free to modify this workflow as needed.
 
-Below are all the steps for the MiFish analysis. The steps for analysing the 18S data can be found [here](https://github.com/GemmaClucas/Matinicus-Rock-2021-Atlantic-Puffins/blob/main/18S_ATPU_qiime.md).
+Below are all the steps for the MiFish analysis for the 2021 samples. The steps for the 2022 samples are essentially the same, but a record of the code I ran is [here](https://github.com/GemmaClucas/Matinicus-Rock-2021-Atlantic-Puffins/blob/main/MiFish_2022_Qiime_commands.md).
+
+The steps for analysing the 18S data in 2021 can be found [here](https://github.com/GemmaClucas/Matinicus-Rock-2021-Atlantic-Puffins/blob/main/18S_ATPU_qiime.md) and for 2022 samples [here](). Again, the code for 2022 is essentially the same as for 2021, but I like to keep a separate record of the exact code I ran.
 
 ## 1. Import the data into Qiime2
 
