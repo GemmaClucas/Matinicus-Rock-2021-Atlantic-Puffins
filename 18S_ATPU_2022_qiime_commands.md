@@ -46,5 +46,180 @@ Summarise read quality and number of reads for each plate.
     done
 
 View `.qzv` files at [view.qiime2.org](view.qiime2.org). The quality of
-the reads looks good. Most samples have tens of thousands of reads,
-which should be enough.
+the reads looks good. Most samples have tens to hundreds of thousands of
+reads, which should be good.
+
+## 2. Trim primers using cutadapt
+
+The 18S sequences are:
+
+F primer: GGTCTGTGATGCCCTTAGATG (21 bp) R primer: GGTGTGTACAAAGGGCAGGG
+(20 bp)
+
+### Trim 3’ ends first
+
+At the 3’ end of the read, the primer will have been read through after
+reading the 18S region. I need to be looking for the reverse complement
+of the reverse primer in read 1 (—p-adapter-f) and the reverse
+complement of the forward primer in R2 (—p-adapter-r).
+
+F primer reverse complement: CATCTAAGGGCATCACAGACC R primer reverse
+complement: CCCTGCCCTTTGTACACACC
+
+    for K in {1..3}; do
+      qiime cutadapt trim-paired \
+        --i-demultiplexed-sequences demux_plate$K.qza \
+        --p-adapter-f CCCTGCCCTTTGTACACACC \
+        --p-adapter-r CATCTAAGGGCATCACAGACC \
+        --o-trimmed-sequences trimd_Plate$K.qza \
+        --verbose > cutadapt_out_Plate$K.txt
+    done
+
+To see how much data passed the filter for each sample:
+
+    grep "Total written (filtered):" cutadapt_out_Plate1.txt 
+    grep "Total written (filtered):" cutadapt_out_Plate2.txt
+    grep "Total written (filtered):" cutadapt_out_Plate3.txt
+
+About 77% of the data is passing the filters consistently across all
+samples, which is a good sign.
+
+### Trim 5’ ends of reads
+
+All R1 should begin with the forward primer: GGTCTGTGATGCCCTTAGATG (21
+bases). All R2 should begin with the reverse primer:
+GGTGTGTACAAAGGGCAGGG (20 bases).
+
+Trim these with the following commands:
+
+    for K in {1..3}; do
+      qiime cutadapt trim-paired \
+        --i-demultiplexed-sequences trimd_Plate$K.qza \
+        --p-front-f GGTCTGTGATGCCCTTAGATG \
+        --p-front-r GGTGTGTACAAAGGGCAGGG \
+        --o-trimmed-sequences trimd2_Plate$K.qza \
+        --verbose > cutadapt_out2_Plate$K.txt
+    done
+
+To see how much data passed the filter for each sample:
+
+    grep "Total written (filtered):" cutadapt_out2_Plate1.txt 
+    grep "Total written (filtered):" cutadapt_out2_Plate2.txt
+    grep "Total written (filtered):" cutadapt_out2_Plate3.txt
+
+About 90% passed the filter here for nearly all samples. That’s pretty
+normal.
+
+## 3. Denoise with dada2
+
+Using the same settings as with the 2021 data.
+
+Note, this step can be a little slow to run.
+
+    for K in {1..3}; do
+      qiime dada2 denoise-paired \
+        --i-demultiplexed-seqs trimd2_Plate$K.qza \
+        --p-trunc-len-f 150 \
+        --p-trunc-len-r 150 \
+        --p-trim-left-f 0 \
+        --p-trim-left-r 0 \
+        --p-min-overlap 50 \
+        --p-n-threads 12 \
+        --o-representative-sequences rep-seqs_Plate$K \
+        --o-table table_Plate$K \
+        --o-denoising-stats denoise_Plate$K
+    done
+
+Create visualizations for the denoising stats.
+
+    for K in {1..3}; do  
+      qiime metadata tabulate\
+        --m-input-file denoise_Plate$K.qza\
+        --o-visualization denoise_Plate$K.qzv
+    done
+
+Seems like \>80% of the data is getting through all the denoising and
+filtering done in this step for the majority of samples, so that’s
+great. The blanks also look like they have very few reads left in them,
+so I think we should be good there too.
+
+## 4. Merge across plates
+
+For the metadata file, I have just copied the one I used for the 2022
+MiFish analysis into this folder.
+
+    qiime feature-table merge \
+      --i-tables table_Plate1.qza \
+      --i-tables table_Plate2.qza \
+      --i-tables table_Plate3.qza \
+      --p-overlap-method sum \
+      --o-merged-table merged-table.qza
+      
+    qiime feature-table summarize \
+        --i-table merged-table.qza \
+        --m-sample-metadata-file metadata.txt \
+        --o-visualization merged-table
+        
+    qiime feature-table merge-seqs \
+      --i-data rep-seqs_Plate1.qza \
+      --i-data rep-seqs_Plate2.qza \
+      --i-data rep-seqs_Plate3.qza \
+      --o-merged-data merged_rep-seqs.qza
+      
+    qiime feature-table tabulate-seqs \
+      --i-data merged_rep-seqs.qza \
+      --o-visualization merged_rep-seqs.qzv
+
+## 5. Assign taxonomy using Naive Bayes classifier
+
+I am going to use the exact same classifier that I trained for the 2021
+samples, so that there are no year effects. Notes on how I trained it
+are in the code for the 2021 analysis.
+
+    qiime feature-classifier classify-sklearn \
+      --i-classifier ../18S/classifier.qza \
+      --i-reads merged_rep-seqs.qza \
+      --o-classification sklearn_taxonomy.qza
+      
+    qiime taxa barplot\
+          --i-table merged-table.qza\
+          --i-taxonomy sklearn_taxonomy.qza\
+          --m-metadata-file metadata.txt\
+          --o-visualization barplot_sklearn-taxa.qzv
+
+## 6. Filter out non-metazoan, avian, and parasite sequences
+
+Use the `--p-incude` flag to include only features with “Metazoa” in the
+taxonomoy string and remake barplot.
+
+    qiime taxa filter-table \
+      --i-table merged-table.qza \
+      --i-taxonomy sklearn_taxonomy.qza \
+      --p-include Metazoa \
+      --o-filtered-table merged-table_onlymetazoa.qza
+      
+    qiime taxa barplot\
+          --i-table merged-table_onlymetazoa.qza\
+          --i-taxonomy sklearn_taxonomy.qza\
+          --m-metadata-file metadata.txt\
+          --o-visualization barplot_sklearn-taxa_onlymetazoa.qzv
+
+There is, as usual, a lot of bird DNA in the samples and also some
+mammalian DNA (most likely human). Exclude this next:
+
+    qiime taxa filter-table \
+      --i-table merged-table_onlymetazoa.qza \
+      --i-taxonomy sklearn_taxonomy.qza \
+      --p-exclude Aves,Mammalia \
+      --o-filtered-table merged-table_noBirdsMammals.qza
+      
+    qiime feature-table summarize \
+        --i-table merged-table_noBirdsMammals.qza \
+        --m-sample-metadata-file metadata.txt \
+        --o-visualization merged-table_noBirdsMammals.qzv
+      
+    qiime taxa barplot\
+          --i-table merged-table_noBirdsMammals.qza \
+          --i-taxonomy sklearn_taxonomy.qza\
+          --m-metadata-file metadata.txt\
+          --o-visualization barplot_sklearn-taxa_noBirdsMammals
