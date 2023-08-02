@@ -299,3 +299,29 @@ again on the robot, but realised that the naming convention is not the
 same, so ATPU1 from last year is not the same sample as ATPU2021_1. Will
 look at this when there’s more time to figure out exactly which sample
 is which.
+
+## 11. For the troppy samples, we want to rarefy to 200 reads
+
+200 reads was adequate for the rest of the 2020 and 2021 samples, so I’m
+using that here too, and saving everything to the Troppy_stuff folder.
+
+    qiime feature-table filter-samples \
+      --i-table merged_table_noBirdsMammalsUnassigned.qza \
+      --m-metadata-file metadata.txt \
+      --p-where "Species='RBTR'" \
+      --o-filtered-table ../../Stormies-Keenan-Yakola/Troppy_stuff/RBTR_MiFish2020samples_table_noBirdsMammalsUnassigned.qza \
+      --verbose
+      
+    qiime feature-table rarefy \
+      --i-table ../../Stormies-Keenan-Yakola/Troppy_stuff/RBTR_MiFish2020samples_table_noBirdsMammalsUnassigned.qza \
+      --p-sampling-depth 200 \
+      --o-rarefied-table ../../Stormies-Keenan-Yakola/Troppy_stuff/RBTR_MiFish2020samples_table_noBirdsMammalsUnassigned_rarefied200  
+
+    qiime taxa barplot \
+      --i-table ../../Stormies-Keenan-Yakola/Troppy_stuff/RBTR_MiFish2020samples_table_noBirdsMammalsUnassigned_rarefied200.qza \
+      --i-taxonomy superblast_taxonomy.qza \
+      --m-metadata-file metadata.txt \
+      --o-visualization ../../Stormies-Keenan-Yakola/Troppy_stuff/barplot_RBTR_MiFish2020samples_noBirdsMammalsUnassigned_rarefied200.qzv
+
+Downloaded and sent this csv to Will and Keenan. This allowed us to keep
+4 samples from that set.
