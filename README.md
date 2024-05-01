@@ -10,6 +10,8 @@ Below are all the steps for the MiFish analysis for the 2021 samples. The steps 
 
 The steps for analysing the 18S data in 2021 can be found [here](https://github.com/GemmaClucas/Matinicus-Rock-2021-Atlantic-Puffins/blob/main/18S_ATPU_qiime.md) and for 2022 samples [here](https://github.com/GemmaClucas/Matinicus-Rock-2021-Atlantic-Puffins/blob/main/18S_ATPU_2022_qiime_commands.md). Again, the code for 2022 is essentially the same as for 2021, but I like to keep a separate record of the exact code I ran.
 
+I ran a test on plate 1 of the 2022 samples using Julie McInnes PNA-Clamp to block the puffin DNA in the 18S data. The Qiime commands for that analysis can be found [here]().
+
 ## 1. Import the data into Qiime2
 
 First, load qiime environment and cd to correct directory in the terminal. Modify this command based on where your working directory will be.
