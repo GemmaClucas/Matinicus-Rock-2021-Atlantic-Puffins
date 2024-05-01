@@ -226,3 +226,75 @@ qiime taxa barplot\
       --o-visualization barplot_sklearn-taxa_noBirdsMammals
 ```
 
+Will went through what was left and highlighted the parasites to remove. We recovered more than last year, so the list is slightly longer:
+```
+qiime taxa filter-table \
+  --i-table merged-table_noBirdsMammals.qza \
+  --i-taxonomy sklearn_taxonomy.qza \
+  --p-exclude Eucestoda,Trichocephalida,Acari,Rhabditida,Digenea,Siphonostomatoida,Bivalvulida,Ascaridida,Spirurida,Monstrilloida \
+  --o-filtered-table merged-table_noBirdsMammalsParasites.qza
+  
+qiime feature-table summarize \
+    --i-table merged-table_noBirdsMammalsParasites.qza \
+    --m-sample-metadata-file metadata.txt \
+    --o-visualization merged-table_noBirdsMammalsParasites.qzv
+  
+qiime taxa barplot\
+      --i-table merged-table_noBirdsMammalsParasites.qza \
+      --i-taxonomy sklearn_taxonomy.qza\
+      --m-metadata-file metadata.txt\
+      --o-visualization barplot_sklearn-taxa_noBirdsMammalsParasites
+```
+
+
+## 7. Calculate rarefaction curves 
+
+Last year we found that 2500 was the minimum depth to capture all the diversity. We should use this again, so that the data is comparable between years, but I'd like to take a look at the curves all the same.
+
+First you have to collapse the taxonomy, so you are counting species and not ASVs.
+```
+qiime taxa collapse \
+    --i-table merged-table_noBirdsMammalsParasites.qza \
+    --i-taxonomy sklearn_taxonomy.qza \
+    --p-level 7 \
+    --o-collapsed-table merged-collapsed-table_noBirdsMammalsParasites.qza
+
+qiime feature-table summarize \
+    --i-table merged-collapsed-table_noBirdsMammalsParasites.qza \
+    --m-sample-metadata-file metadata.txt \
+    --o-visualization merged-collapsed-table_noBirdsMammalsParasites.qzv
+
+qiime diversity alpha-rarefaction \
+    --i-table merged-collapsed-table_noBirdsMammalsParasites.qza \
+    --m-metadata-file metadata.txt \
+    --p-min-depth 100 \
+    --p-max-depth 10000 \
+    --o-visualization alpha-rarefaction-100-10000_noBirdsMammalsParasites
+```
+
+It looks like about 3000 seems to be the minimum for this year. Re-do the rarefaction curve to focus on this region:
+```
+qiime diversity alpha-rarefaction \
+    --i-table merged-collapsed-table_noBirdsMammalsParasites.qza \
+    --m-metadata-file metadata.txt \
+    --p-min-depth 2000 \
+    --p-max-depth 4000 \
+    --o-visualization alpha-rarefaction-2000-4000_noBirdsMammalsParasites
+```
+It does seem like ~3400 is the minimum for this year, but we will stick to the 2500 that we used for last year.
+
+## 8. Rarefy to a depth of 2500 reads
+
+```
+qiime feature-table rarefy \
+  --i-table merged-table_noBirdsMammalsParasites.qza \
+  --p-sampling-depth 2500 \
+  --o-rarefied-table merged-table_noBirdsMammalsParasites_rarefied2500
+  
+qiime taxa barplot \
+  --i-table merged-table_noBirdsMammalsParasites_rarefied2500.qza \
+  --i-taxonomy sklearn_taxonomy.qza \
+  --m-metadata-file metadata.txt \
+  --o-visualization barplot_noBirdsMammalsParasites_rarefied2500.qzv
+```
+Rarefying to this depth means that all of the blanks have been taken care of. This leaves 111 samples with a depth greater than 2500.
